@@ -23,6 +23,13 @@ hexTable    db "0123456789ABCDEF"
 
 section .text
 
+;--------------------------------------------------------------;
+;   
+; Entry: format string - rdi
+;            arguments - rsi, rdx, rcx, r8, r9, stack
+;
+;--------------------------------------------------------------;
+
 MyPrintf:
         pop r11
 
@@ -50,6 +57,12 @@ MyPrintf:
 
         ret
 
+;--------------------------------------------------------------;
+;
+; Entry: format string - rdi
+;            arguments - stack
+;
+;--------------------------------------------------------------;
 
 MyPrintfAsm:
 
@@ -57,8 +70,10 @@ MyPrintfAsm:
     mov rdi, buffer
     xor rbx, rbx
         
-
-
+    ;-----------------------------------------------------------;
+    ;
+    ; Gets symbols
+    ;
     ;-----------------------------------------------------------;
     .stringParse:
         xor rax, rax
@@ -75,11 +90,13 @@ MyPrintfAsm:
         inc rdi
 
         jmp .stringParse
-    ;-----------------------------------------------------------;
-
-
 
     ;-----------------------------------------------------------;
+    ;
+    ; Gets the symbol after percent
+    ;
+    ;-----------------------------------------------------------;
+
     .parseSpecifier:
         xor rax, rax
 
@@ -98,11 +115,13 @@ MyPrintfAsm:
 
         mov rax, [.jumpTable + 8 * rax]
         jmp rax
-    ;------------------------------------------------------------;
-
-
 
     ;------------------------------------------------------------;
+    ;
+    ; Jump Table
+    ;
+    ;------------------------------------------------------------;
+
     .jumpTable:
         
                             dq .wrongLetter
@@ -124,11 +143,13 @@ MyPrintfAsm:
 
                             dq .wrongLetter
                             dq .wrongLetter
-    ;------------------------------------------------------------;
-
-
 
     ;------------------------------------------------------------;
+    ;
+    ; All cases of specifiers
+    ;
+    ;------------------------------------------------------------;
+
     .bSpecifier:
         inc rbx
         mov cl, 1
@@ -185,6 +206,7 @@ MyPrintfAsm:
         inc rdi
 
         jmp .stringParse
+    ;--------------------------------------------------------------;
 
 .MyPrintfAsm__End:
     call flushBuffer
@@ -194,9 +216,9 @@ MyPrintfAsm:
 ret
 
 ;--------------------------------------------------------------;
-
-
-
+; Copies str to buf
+; Expects: rdi - buffer
+; Destr: rsi
 ;--------------------------------------------------------------;
 
 StrToBuf:
@@ -212,9 +234,9 @@ StrToBuf:
 ret
 
 ;--------------------------------------------------------------;
-
-
-
+; Moves number of base 10 to buf
+;
+; Destr: rdx, rax, r8, r15, r14
 ;--------------------------------------------------------------;
 
 DecToStr:
@@ -267,9 +289,9 @@ DecToStr:
 ret
 
 ;--------------------------------------------------------------;
-
-
-
+; Moves number of base 2^n to buf
+; Expects: cl - base
+; Destr: rdx, r12, rax, 
 ;--------------------------------------------------------------;
 
 Base2nToStr:
@@ -284,7 +306,7 @@ Base2nToStr:
     neg edx
 
 .ifnotnegative:
-    call countBinBytes
+    call countBase2nBytes
 
     add rdi, rax
     
@@ -317,12 +339,12 @@ Base2nToStr:
     ret
     
 ;--------------------------------------------------------------;
-
-
-
+; Counts bytes needed for the number 
+; 
+; Result is in rax
 ;--------------------------------------------------------------;
 
-countBinBytes:
+countBase2nBytes:
     xor r12, r12
     mov rax, rdx
 
@@ -338,9 +360,9 @@ countBinBytes:
 ret
 
 ;--------------------------------------------------------------;
-
-
-
+; Flushes buffer
+; 
+;
 ;--------------------------------------------------------------;
 flushBuffer:
     push rsi
@@ -349,7 +371,7 @@ flushBuffer:
     sub rdi, buffer
     mov rdx, rdi
 
-    mov rax, 0x01           ;write
+    mov rax, 0x01           ;print syscall
     mov rdi, 1
     mov rsi, buffer
     syscall
